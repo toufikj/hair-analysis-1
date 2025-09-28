@@ -8,8 +8,8 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 248 250 252;
-    --foreground: 226 232 240;
+    --background: 255 255 255;
+    --foreground: 15 23 42;
 
     --card: 255 255 255;
     --card-foreground: 15 23 42;
@@ -17,29 +17,31 @@ All colors MUST be HSL.
     --popover: 255 255 255;
     --popover-foreground: 15 23 42;
 
-    --primary: 14 165 233;
-    --primary-foreground: 248 250 252;
+    --primary: 37 99 235;
+    --primary-foreground: 255 255 255;
 
-    --secondary: 241 245 249;
+    --secondary: 248 250 252;
     --secondary-foreground: 51 65 85;
 
     --muted: 248 250 252;
     --muted-foreground: 100 116 139;
 
-    --accent: 236 254 255;
-    --accent-foreground: 14 116 144;
+    --accent: 219 234 254;
+    --accent-foreground: 30 58 138;
 
     --destructive: 239 68 68;
-    --destructive-foreground: 248 250 252;
+    --destructive-foreground: 255 255 255;
 
     --border: 226 232 240;
-    --input: 226 232 240;
-    --ring: 14 165 233;
+    --input: 255 255 255;
+    --ring: 37 99 235;
 
-    --medical-blue: 59 130 246;
-    --medical-green: 34 197 94;
-    --medical-purple: 147 51 234;
-    --clinic-gradient: linear-gradient(135deg, hsl(var(--medical-blue)), hsl(var(--primary)));
+    --medical-blue: 37 99 235;
+    --medical-green: 22 163 74;
+    --medical-purple: 126 34 206;
+    --medical-teal: 20 184 166;
+    --medical-orange: 234 88 12;
+    --clinic-gradient: linear-gradient(135deg, hsl(var(--medical-blue)), hsl(var(--medical-teal)));
     --success-light: 240 253 244;
     --warning-light: 255 251 235;
 
@@ -63,33 +65,33 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 12 6.5% 15.1%;
     --foreground: 210 40% 98%;
 
-    --card: 222.2 84% 4.9%;
+    --card: 20 14.3% 4.1%;
     --card-foreground: 210 40% 98%;
 
-    --popover: 222.2 84% 4.9%;
+    --popover: 20 14.3% 4.1%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
+    --primary: 37 99 235;
+    --primary-foreground: 255 255 255;
 
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 24 9.8% 10%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217.2 32.6% 17.5%;
+    --muted: 24 9.8% 10%;
     --muted-foreground: 215 20.2% 65.1%;
 
-    --accent: 217.2 32.6% 17.5%;
+    --accent: 24 9.8% 10%;
     --accent-foreground: 210 40% 98%;
 
-    --destructive: 0 62.8% 30.6%;
+    --destructive: 0 72.2% 50.6%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    --border: 24 5.7% 10%;
+    --input: 24 9.8% 10%;
+    --ring: 37 99 235;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;

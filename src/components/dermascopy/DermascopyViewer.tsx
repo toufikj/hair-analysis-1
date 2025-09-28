@@ -271,10 +271,21 @@ export const DermascopyViewer = ({ onAddImage }: DermascopyViewerProps) => {
                     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
                     .map(image => (
                       <div key={image.id} className="group border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
-                        <div className="aspect-square bg-muted relative">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <Camera className="h-12 w-12 text-muted-foreground" />
-                          </div>
+                        <div className="aspect-square bg-muted relative overflow-hidden">
+                          {(() => {
+                            const imageData = storage.getImageFile(image.imageUrl);
+                            return imageData ? (
+                              <img 
+                                src={imageData} 
+                                alt={`Dermascopy of ${image.scalpArea}`}
+                                className="absolute inset-0 w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <Camera className="h-12 w-12 text-muted-foreground" />
+                              </div>
+                            );
+                          })()}
                           <div className="absolute top-2 left-2">
                             <Badge className={getAreaColor(image.scalpArea)}>
                               {image.scalpArea}
@@ -306,11 +317,24 @@ export const DermascopyViewer = ({ onAddImage }: DermascopyViewerProps) => {
                                   <DialogHeader>
                                     <DialogTitle>Image Details</DialogTitle>
                                   </DialogHeader>
-                                  {selectedImage && (
-                                    <div className="space-y-4">
-                                      <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-                                        <Camera className="h-16 w-16 text-muted-foreground" />
-                                      </div>
+                                   {selectedImage && (
+                                     <div className="space-y-4">
+                                       <div className="aspect-square bg-muted rounded-lg overflow-hidden relative">
+                                         {(() => {
+                                           const imageData = storage.getImageFile(selectedImage.imageUrl);
+                                           return imageData ? (
+                                             <img 
+                                               src={imageData} 
+                                               alt={`Dermascopy of ${selectedImage.scalpArea}`}
+                                               className="w-full h-full object-cover"
+                                             />
+                                           ) : (
+                                             <div className="flex items-center justify-center h-full">
+                                               <Camera className="h-16 w-16 text-muted-foreground" />
+                                             </div>
+                                           );
+                                         })()}
+                                       </div>
                                       <div className="grid grid-cols-2 gap-4 text-sm">
                                         <div>
                                           <Label className="font-medium">Patient:</Label>
