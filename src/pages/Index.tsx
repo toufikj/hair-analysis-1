@@ -1,7 +1,11 @@
 import { CRMApp } from '@/components/CRMApp';
 
-const Index = () => {
-  return <CRMApp />;
+interface IndexProps {
+  onLogout: () => void;
+}
+
+const Index = ({ onLogout }: IndexProps) => {
+  return <CRMApp onLogout={onLogout} />;
 };
 
 export default Index;

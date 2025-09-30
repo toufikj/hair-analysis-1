@@ -35,7 +35,7 @@ All colors MUST be HSL.
 
     --medical-blue: 37 99 235;
     --medical-green: 22 163 74;
-    --medical-purple: 126 34 206;
+   
     --medical-teal: 20 184 166;
     --medical-orange: 234 88 12;
     --clinic-gradient: linear-gradient(135deg, hsl(var(--medical-blue)), hsl(var(--medical-teal)));

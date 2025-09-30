@@ -12,7 +12,11 @@ import { TreatmentForm } from './treatments/TreatmentForm';
 import { SettingsPanel } from './settings/SettingsPanel';
 import { Patient, Appointment, DermascopyImage, TreatmentRecord } from '@/types/patient';
 
-export const CRMApp = () => {
+interface CRMAppProps {
+  onLogout: () => void;
+}
+
+export const CRMApp = ({ onLogout }: CRMAppProps) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
   const [editingPatient, setEditingPatient] = useState<Patient | null>(null);
@@ -134,7 +138,7 @@ export const CRMApp = () => {
 
   return (
     <div className="flex h-screen bg-background">
-      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} />
+      <Sidebar activeTab={activeTab} onTabChange={handleTabChange} onLogout={onLogout} />
       <main className="flex-1 overflow-auto">
         <div className="p-6">
           {renderContent()}

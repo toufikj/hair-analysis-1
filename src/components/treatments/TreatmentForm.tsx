@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PatientSelect } from '@/components/ui/patient-select';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { format } from 'date-fns';
@@ -178,24 +179,12 @@ export const TreatmentForm = ({ treatment, onSave, onCancel }: TreatmentFormProp
                 <Label htmlFor="patient" className="text-sm font-medium">
                   Patient *
                 </Label>
-                <Select 
-                  value={formData.patientId} 
+                <PatientSelect
+                  patients={patients}
+                  value={formData.patientId}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, patientId: value }))}
-                >
-                  <SelectTrigger>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <SelectValue placeholder="Select a patient" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {patients.map(patient => (
-                      <SelectItem key={patient.id} value={patient.id}>
-                        {getPatientDisplay(patient)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  placeholder="Search and select a patient"
+                />
               </div>
 
               {/* Treatment Type */}
@@ -237,7 +226,7 @@ export const TreatmentForm = ({ treatment, onSave, onCancel }: TreatmentFormProp
                       mode="single"
                       selected={selectedDate}
                       onSelect={setSelectedDate}
-                      disabled={(date) => date > new Date() || date < new Date('2020-01-01')}
+                      disabled={(date) => date < new Date('2020-01-01')}
                       initialFocus
                       className="pointer-events-auto"
                     />
@@ -266,7 +255,7 @@ export const TreatmentForm = ({ treatment, onSave, onCancel }: TreatmentFormProp
                       mode="single"
                       selected={nextAppointmentDate}
                       onSelect={setNextAppointmentDate}
-                      disabled={(date) => date < new Date()}
+                      disabled={(date) => date < new Date(Date.now() - 24 * 60 * 60 * 1000)}
                       initialFocus
                       className="pointer-events-auto"
                     />

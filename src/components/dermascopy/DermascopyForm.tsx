@@ -5,10 +5,20 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { PatientSelect } from '@/components/ui/patient-select';
 import { Camera, Upload, User, MapPin, X } from 'lucide-react';
 import { storage } from '@/lib/storage';
 import { DermascopyImage, Patient } from '@/types/patient';
 import { useToast } from '@/hooks/use-toast';
+
+interface ImageData {
+  file: File;
+  preview: string;
+  scalpArea: DermascopyImage['scalpArea'];
+  quality: DermascopyImage['quality'];
+  magnification: string;
+  notes: string;
+}
 
 interface DermascopyFormProps {
   image?: DermascopyImage;
@@ -20,15 +30,9 @@ export const DermascopyForm = ({ image, onSave, onCancel }: DermascopyFormProps)
   const [patients, setPatients] = useState<Patient[]>([]);
   const [formData, setFormData] = useState({
     patientId: '',
-    treatmentId: '',
-    scalpArea: '' as DermascopyImage['scalpArea'],
-    fileName: '',
-    notes: '',
-    magnification: '',
-    quality: 'good' as DermascopyImage['quality']
+    treatmentId: ''
   });
-  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
+  const [imageDataList, setImageDataList] = useState<ImageData[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -39,18 +43,20 @@ export const DermascopyForm = ({ image, onSave, onCancel }: DermascopyFormProps)
     if (image) {
       setFormData({
         patientId: image.patientId,
-        treatmentId: image.treatmentId,
-        scalpArea: image.scalpArea,
-        fileName: image.fileName,
-        notes: image.notes,
-        magnification: image.magnification || '',
-        quality: image.quality
+        treatmentId: image.treatmentId
       });
       
-      // Load existing image
+      // Load existing image as single image data
       const existingImageData = storage.getImageFile(image.imageUrl);
       if (existingImageData) {
-        setPreviewUrls([existingImageData]);
+        setImageDataList([{
+          file: new File([], image.fileName),
+          preview: existingImageData,
+          scalpArea: image.scalpArea,
+          quality: image.quality,
+          magnification: image.magnification || '',
+          notes: image.notes
+        }]);
       }
     }
   }, [image]);
@@ -60,7 +66,6 @@ export const DermascopyForm = ({ image, onSave, onCancel }: DermascopyFormProps)
     if (!files || files.length === 0) return;
 
     const validFiles: File[] = [];
-    const newPreviewUrls: string[] = [...previewUrls];
 
     Array.from(files).forEach(file => {
       if (!file.type.startsWith('image/')) {
@@ -76,38 +81,52 @@ export const DermascopyForm = ({ image, onSave, onCancel }: DermascopyFormProps)
 
     if (validFiles.length === 0) return;
 
-    setSelectedFiles(prev => [...prev, ...validFiles]);
-    
-    // Update filename if it's the first file
-    if (selectedFiles.length === 0 && validFiles.length > 0) {
-      setFormData(prev => ({ 
-        ...prev, 
-        fileName: validFiles[0].name 
-      }));
-    }
-
-    // Create previews
+    // Create image data objects for each file
     validFiles.forEach(file => {
       const reader = new FileReader();
       reader.onload = (e) => {
-        setPreviewUrls(prev => [...prev, e.target?.result as string]);
+        const preview = e.target?.result as string;
+        setImageDataList(prev => [...prev, {
+          file,
+          preview,
+          scalpArea: 'crown', // default value
+          quality: 'good',
+          magnification: '',
+          notes: ''
+        }]);
       };
       reader.readAsDataURL(file);
     });
   };
 
-  const removeFile = (index: number) => {
-    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
-    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
+  const removeImage = (index: number) => {
+    setImageDataList(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateImageData = (index: number, field: keyof ImageData, value: any) => {
+    setImageDataList(prev => prev.map((item, i) => 
+      i === index ? { ...item, [field]: value } : item
+    ));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.patientId || !formData.scalpArea || (selectedFiles.length === 0 && !image)) {
+    if (!formData.patientId || imageDataList.length === 0) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields and select at least one image",
+        description: "Please select a patient and upload at least one image",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Validate that all images have required scalp area
+    const invalidImages = imageDataList.filter(img => !img.scalpArea);
+    if (invalidImages.length > 0) {
+      toast({
+        title: "Validation Error",
+        description: "Please select a scalp area for all images",
         variant: "destructive"
       });
       return;
@@ -118,44 +137,45 @@ export const DermascopyForm = ({ image, onSave, onCancel }: DermascopyFormProps)
     try {
       if (image) {
         // Update existing image
+        const imageData = imageDataList[0];
         let imageUrl = image.imageUrl;
         
-        if (selectedFiles.length > 0) {
-          imageUrl = await storage.saveImageFile(selectedFiles[0]);
+        if (imageData.file.size > 0) {
+          imageUrl = await storage.saveImageFile(imageData.file);
         }
 
-        const imageData: DermascopyImage = {
+        const updatedImage: DermascopyImage = {
           ...image,
           patientId: formData.patientId,
-          scalpArea: formData.scalpArea,
-          fileName: formData.fileName,
-          notes: formData.notes,
-          magnification: formData.magnification,
-          quality: formData.quality,
+          scalpArea: imageData.scalpArea,
+          fileName: imageData.file.name || image.fileName,
+          notes: imageData.notes,
+          magnification: imageData.magnification,
+          quality: imageData.quality,
           imageUrl
         };
 
-        storage.saveDermascopyImage(imageData);
+        storage.saveDermascopyImage(updatedImage);
       } else {
         // Save multiple new images
-        for (let i = 0; i < selectedFiles.length; i++) {
-          const file = selectedFiles[i];
-          const imageUrl = await storage.saveImageFile(file);
+        for (let i = 0; i < imageDataList.length; i++) {
+          const imageData = imageDataList[i];
+          const imageUrl = await storage.saveImageFile(imageData.file);
           
-          const imageData: DermascopyImage = {
+          const dermascopyImage: DermascopyImage = {
             id: `img_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`,
             patientId: formData.patientId,
             treatmentId: formData.treatmentId || '',
-            scalpArea: formData.scalpArea,
+            scalpArea: imageData.scalpArea,
             imageUrl,
-            fileName: i === 0 ? formData.fileName : file.name,
-            notes: formData.notes,
-            magnification: formData.magnification,
-            quality: formData.quality,
+            fileName: imageData.file.name,
+            notes: imageData.notes,
+            magnification: imageData.magnification,
+            quality: imageData.quality,
             timestamp: new Date().toISOString()
           };
 
-          storage.saveDermascopyImage(imageData);
+          storage.saveDermascopyImage(dermascopyImage);
         }
       }
 
@@ -163,14 +183,14 @@ export const DermascopyForm = ({ image, onSave, onCancel }: DermascopyFormProps)
         title: "Success",
         description: image 
           ? "Image updated successfully" 
-          : `${selectedFiles.length} image(s) saved successfully`
+          : `${imageDataList.length} image(s) saved successfully`
       });
 
       onSave();
     } catch (error) {
       toast({
         title: "Error",
-        description: "Failed to save image. Please try again.",
+        description: "Failed to save images. Please try again.",
         variant: "destructive"
       });
     } finally {
@@ -234,30 +254,97 @@ export const DermascopyForm = ({ image, onSave, onCancel }: DermascopyFormProps)
                 </div>
               )}
 
-              {previewUrls.length > 0 && (
-                <div className="space-y-2">
+              {imageDataList.length > 0 && (
+                <div className="space-y-4">
                   <Label className="text-sm font-medium">
-                    Preview{previewUrls.length > 1 ? 's' : ''} ({previewUrls.length})
+                    Images ({imageDataList.length})
                   </Label>
-                  <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
-                    {previewUrls.map((url, index) => (
-                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
-                        <img
-                          src={url}
-                          alt={`Preview ${index + 1}`}
-                          className="w-full h-full object-cover"
-                        />
-                        {!image && (
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            className="absolute top-1 right-1 h-6 w-6 p-0"
-                            onClick={() => removeFile(index)}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        )}
+                  <div className="space-y-4 max-h-96 overflow-y-auto">
+                    {imageDataList.map((imageData, index) => (
+                      <div key={index} className="border rounded-lg p-4 space-y-3">
+                        <div className="flex items-start gap-3">
+                          <div className="w-20 h-20 rounded-lg overflow-hidden border bg-muted flex-shrink-0">
+                            <img
+                              src={imageData.preview}
+                              alt={`Preview ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="flex-1 space-y-3">
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <Label className="text-xs font-medium">Scalp Area *</Label>
+                                <Select 
+                                  value={imageData.scalpArea} 
+                                  onValueChange={(value: DermascopyImage['scalpArea']) => 
+                                    updateImageData(index, 'scalpArea', value)
+                                  }
+                                >
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue placeholder="Select area" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="crown">Crown</SelectItem>
+                                    <SelectItem value="temples">Temples</SelectItem>
+                                    <SelectItem value="frontal">Frontal</SelectItem>
+                                    <SelectItem value="vertex">Vertex</SelectItem>
+                                    <SelectItem value="occipital">Occipital</SelectItem>
+                                    <SelectItem value="sides">Sides</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div>
+                                <Label className="text-xs font-medium">Quality</Label>
+                                <Select 
+                                  value={imageData.quality} 
+                                  onValueChange={(value: DermascopyImage['quality']) => 
+                                    updateImageData(index, 'quality', value)
+                                  }
+                                >
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="excellent">Excellent</SelectItem>
+                                    <SelectItem value="good">Good</SelectItem>
+                                    <SelectItem value="fair">Fair</SelectItem>
+                                    <SelectItem value="poor">Poor</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            <div>
+                              <Label className="text-xs font-medium">Magnification</Label>
+                              <Input
+                                placeholder="e.g., 10x, 20x"
+                                value={imageData.magnification}
+                                onChange={(e) => updateImageData(index, 'magnification', e.target.value)}
+                                className="h-8"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs font-medium">Notes</Label>
+                              <Textarea
+                                placeholder="Notes for this image..."
+                                value={imageData.notes}
+                                onChange={(e) => updateImageData(index, 'notes', e.target.value)}
+                                rows={2}
+                                className="text-xs"
+                              />
+                            </div>
+                          </div>
+                          {!image && (
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => removeImage(index)}
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -292,109 +379,15 @@ export const DermascopyForm = ({ image, onSave, onCancel }: DermascopyFormProps)
                 <Label htmlFor="patient" className="text-sm font-medium">
                   Patient *
                 </Label>
-                <Select 
-                  value={formData.patientId} 
+                <PatientSelect
+                  patients={patients}
+                  value={formData.patientId}
                   onValueChange={(value) => setFormData(prev => ({ ...prev, patientId: value }))}
-                >
-                  <SelectTrigger>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-muted-foreground" />
-                      <SelectValue placeholder="Select a patient" />
-                    </div>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {patients.map(patient => (
-                      <SelectItem key={patient.id} value={patient.id}>
-                        {getPatientDisplay(patient)}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Scalp Area */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">Scalp Area *</Label>
-                <Select 
-                  value={formData.scalpArea} 
-                  onValueChange={(value: DermascopyImage['scalpArea']) => 
-                    setFormData(prev => ({ ...prev, scalpArea: value }))
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select scalp area" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="crown">Crown</SelectItem>
-                    <SelectItem value="temples">Temples</SelectItem>
-                    <SelectItem value="frontal">Frontal</SelectItem>
-                    <SelectItem value="vertex">Vertex</SelectItem>
-                    <SelectItem value="occipital">Occipital</SelectItem>
-                    <SelectItem value="sides">Sides</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                {/* Quality */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium">Image Quality</Label>
-                  <Select 
-                    value={formData.quality} 
-                    onValueChange={(value: DermascopyImage['quality']) => 
-                      setFormData(prev => ({ ...prev, quality: value }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="excellent">Excellent</SelectItem>
-                      <SelectItem value="good">Good</SelectItem>
-                      <SelectItem value="fair">Fair</SelectItem>
-                      <SelectItem value="poor">Poor</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Magnification */}
-                <div className="space-y-2">
-                  <Label htmlFor="magnification" className="text-sm font-medium">
-                    Magnification
-                  </Label>
-                  <Input
-                    id="magnification"
-                    placeholder="e.g., 10x, 20x"
-                    value={formData.magnification}
-                    onChange={(e) => setFormData(prev => ({ ...prev, magnification: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              {/* File Name */}
-              <div className="space-y-2">
-                <Label htmlFor="fileName" className="text-sm font-medium">
-                  File Name
-                </Label>
-                <Input
-                  id="fileName"
-                  placeholder="Image file name"
-                  value={formData.fileName}
-                  onChange={(e) => setFormData(prev => ({ ...prev, fileName: e.target.value }))}
+                  placeholder="Search and select a patient"
                 />
               </div>
 
-              {/* Notes */}
-              <div className="space-y-2">
-                <Label htmlFor="notes" className="text-sm font-medium">Notes</Label>
-                <Textarea
-                  id="notes"
-                  placeholder="Additional notes about this image..."
-                  value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  rows={3}
-                />
-              </div>
+              {/* Images will be shown above with individual controls */}
 
               {/* Actions */}
               <div className="flex justify-end gap-4 pt-4">

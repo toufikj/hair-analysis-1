@@ -1,14 +1,15 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Users, Calendar, Camera, FileText, Settings, Home, Plus } from 'lucide-react';
+import { Users, Calendar, Camera, FileText, Settings, Home, Plus, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface SidebarProps {
   activeTab: string;
   onTabChange: (tab: string) => void;
+  onLogout: () => void;
 }
 
-export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
+export const Sidebar = ({ activeTab, onTabChange, onLogout }: SidebarProps) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const menuItems = [
@@ -66,8 +67,17 @@ export const Sidebar = ({ activeTab, onTabChange }: SidebarProps) => {
         </div>
       </nav>
 
-      {/* Collapse Toggle */}
-      <div className="p-2 border-t border-border">
+      {/* Logout and Collapse */}
+      <div className="p-2 border-t border-border space-y-1">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="w-full justify-start gap-3 text-muted-foreground hover:text-foreground"
+          onClick={onLogout}
+        >
+          <LogOut className="h-4 w-4 flex-shrink-0" />
+          {!isCollapsed && <span>Logout</span>}
+        </Button>
         <Button
           variant="ghost"
           size="sm"

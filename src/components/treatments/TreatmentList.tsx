@@ -253,13 +253,26 @@ export const TreatmentList = ({ onAddTreatment, onEditTreatment }: TreatmentList
                             {selectedTreatment.images.length > 0 && (
                               <div>
                                 <Label className="font-medium">Associated Images:</Label>
-                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
-                                  {selectedTreatment.images.map(image => (
-                                    <div key={image.id} className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-                                      <Camera className="h-8 w-8 text-muted-foreground" />
-                                    </div>
-                                  ))}
-                                </div>
+                                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-2">
+                                   {selectedTreatment.images.map(image => {
+                                     const imageData = storage.getImageFile(image.imageUrl);
+                                     return (
+                                       <div key={image.id} className="aspect-square bg-muted rounded-lg overflow-hidden">
+                                         {imageData ? (
+                                           <img 
+                                             src={imageData} 
+                                             alt={`Treatment image`}
+                                             className="w-full h-full object-cover"
+                                           />
+                                         ) : (
+                                           <div className="w-full h-full flex items-center justify-center">
+                                             <Camera className="h-8 w-8 text-muted-foreground" />
+                                           </div>
+                                         )}
+                                       </div>
+                                     );
+                                   })}
+                                 </div>
                               </div>
                             )}
                           </div>
