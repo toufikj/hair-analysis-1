@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Camera, Upload, User, MapPin } from 'lucide-react';
+import { Camera, Upload, User, MapPin, X } from 'lucide-react';
 import { storage } from '@/lib/storage';
 import { DermascopyImage, Patient } from '@/types/patient';
 import { useToast } from '@/hooks/use-toast';
@@ -27,8 +27,8 @@ export const DermascopyForm = ({ image, onSave, onCancel }: DermascopyFormProps)
     magnification: '',
     quality: 'good' as DermascopyImage['quality']
   });
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string>('');
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
@@ -50,45 +50,64 @@ export const DermascopyForm = ({ image, onSave, onCancel }: DermascopyFormProps)
       // Load existing image
       const existingImageData = storage.getImageFile(image.imageUrl);
       if (existingImageData) {
-        setPreviewUrl(existingImageData);
+        setPreviewUrls([existingImageData]);
       }
     }
   }, [image]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
 
-    if (!file.type.startsWith('image/')) {
-      toast({
-        title: "Invalid File",
-        description: "Please select an image file",
-        variant: "destructive"
-      });
-      return;
+    const validFiles: File[] = [];
+    const newPreviewUrls: string[] = [...previewUrls];
+
+    Array.from(files).forEach(file => {
+      if (!file.type.startsWith('image/')) {
+        toast({
+          title: "Invalid File",
+          description: `${file.name} is not an image file`,
+          variant: "destructive"
+        });
+        return;
+      }
+      validFiles.push(file);
+    });
+
+    if (validFiles.length === 0) return;
+
+    setSelectedFiles(prev => [...prev, ...validFiles]);
+    
+    // Update filename if it's the first file
+    if (selectedFiles.length === 0 && validFiles.length > 0) {
+      setFormData(prev => ({ 
+        ...prev, 
+        fileName: validFiles[0].name 
+      }));
     }
 
-    setSelectedFile(file);
-    setFormData(prev => ({ 
-      ...prev, 
-      fileName: file.name 
-    }));
+    // Create previews
+    validFiles.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setPreviewUrls(prev => [...prev, e.target?.result as string]);
+      };
+      reader.readAsDataURL(file);
+    });
+  };
 
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreviewUrl(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+  const removeFile = (index: number) => {
+    setSelectedFiles(prev => prev.filter((_, i) => i !== index));
+    setPreviewUrls(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.patientId || !formData.scalpArea || (!selectedFile && !image)) {
+    if (!formData.patientId || !formData.scalpArea || (selectedFiles.length === 0 && !image)) {
       toast({
         title: "Validation Error",
-        description: "Please fill in all required fields and select an image",
+        description: "Please fill in all required fields and select at least one image",
         variant: "destructive"
       });
       return;
@@ -97,33 +116,54 @@ export const DermascopyForm = ({ image, onSave, onCancel }: DermascopyFormProps)
     setIsSubmitting(true);
 
     try {
-      let imageUrl = image?.imageUrl || '';
-      
-      // If new file selected, save it
-      if (selectedFile) {
-        imageUrl = await storage.saveImageFile(selectedFile);
+      if (image) {
+        // Update existing image
+        let imageUrl = image.imageUrl;
+        
+        if (selectedFiles.length > 0) {
+          imageUrl = await storage.saveImageFile(selectedFiles[0]);
+        }
+
+        const imageData: DermascopyImage = {
+          ...image,
+          patientId: formData.patientId,
+          scalpArea: formData.scalpArea,
+          fileName: formData.fileName,
+          notes: formData.notes,
+          magnification: formData.magnification,
+          quality: formData.quality,
+          imageUrl
+        };
+
+        storage.saveDermascopyImage(imageData);
+      } else {
+        // Save multiple new images
+        for (let i = 0; i < selectedFiles.length; i++) {
+          const file = selectedFiles[i];
+          const imageUrl = await storage.saveImageFile(file);
+          
+          const imageData: DermascopyImage = {
+            id: `img_${Date.now()}_${i}_${Math.random().toString(36).substr(2, 9)}`,
+            patientId: formData.patientId,
+            treatmentId: formData.treatmentId || '',
+            scalpArea: formData.scalpArea,
+            imageUrl,
+            fileName: i === 0 ? formData.fileName : file.name,
+            notes: formData.notes,
+            magnification: formData.magnification,
+            quality: formData.quality,
+            timestamp: new Date().toISOString()
+          };
+
+          storage.saveDermascopyImage(imageData);
+        }
       }
-
-      const imageData: DermascopyImage = {
-        id: image?.id || `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-        patientId: formData.patientId,
-        treatmentId: formData.treatmentId || '',
-        scalpArea: formData.scalpArea,
-        imageUrl,
-        fileName: formData.fileName,
-        notes: formData.notes,
-        magnification: formData.magnification,
-        quality: formData.quality,
-        timestamp: image?.timestamp || new Date().toISOString()
-      };
-
-      storage.saveDermascopyImage(imageData);
 
       toast({
         title: "Success",
         description: image 
           ? "Image updated successfully" 
-          : "Image saved successfully"
+          : `${selectedFiles.length} image(s) saved successfully`
       });
 
       onSave();
@@ -174,6 +214,7 @@ export const DermascopyForm = ({ image, onSave, onCancel }: DermascopyFormProps)
                       type="file"
                       id="image"
                       accept="image/*"
+                      multiple
                       onChange={handleFileSelect}
                       className="hidden"
                     />
@@ -193,15 +234,32 @@ export const DermascopyForm = ({ image, onSave, onCancel }: DermascopyFormProps)
                 </div>
               )}
 
-              {previewUrl && (
+              {previewUrls.length > 0 && (
                 <div className="space-y-2">
-                  <Label className="text-sm font-medium">Preview</Label>
-                  <div className="aspect-square rounded-lg overflow-hidden border">
-                    <img
-                      src={previewUrl}
-                      alt="Preview"
-                      className="w-full h-full object-cover"
-                    />
+                  <Label className="text-sm font-medium">
+                    Preview{previewUrls.length > 1 ? 's' : ''} ({previewUrls.length})
+                  </Label>
+                  <div className="grid grid-cols-2 gap-2 max-h-64 overflow-y-auto">
+                    {previewUrls.map((url, index) => (
+                      <div key={index} className="relative aspect-square rounded-lg overflow-hidden border">
+                        <img
+                          src={url}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        {!image && (
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            className="absolute top-1 right-1 h-6 w-6 p-0"
+                            onClick={() => removeFile(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
+                    ))}
                   </div>
                   {!image && (
                     <Button
@@ -210,7 +268,7 @@ export const DermascopyForm = ({ image, onSave, onCancel }: DermascopyFormProps)
                       size="sm"
                       onClick={() => document.getElementById('image')?.click()}
                     >
-                      Change Image
+                      Add More Images
                     </Button>
                   )}
                 </div>

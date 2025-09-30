@@ -237,7 +237,7 @@ export const TreatmentForm = ({ treatment, onSave, onCancel }: TreatmentFormProp
                       mode="single"
                       selected={selectedDate}
                       onSelect={setSelectedDate}
-                      disabled={(date) => date > new Date()}
+                      disabled={(date) => date > new Date() || date < new Date('2020-01-01')}
                       initialFocus
                       className="pointer-events-auto"
                     />
