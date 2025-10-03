@@ -1,75 +1,223 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { api } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { toast } from 'sonner';
 
-export default function Appointments() {
-  const [date, setDate] = useState<Date | undefined>(new Date());
+interface Patient {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
 
-  const appointments = [
-    { id: 1, time: "09:00 AM", patient: "John Doe", type: "Consultation" },
-    { id: 2, time: "10:30 AM", patient: "Jane Smith", type: "Follow-up" },
-    { id: 3, time: "02:00 PM", patient: "Bob Johnson", type: "Treatment" },
-  ];
+interface Appointment {
+  id: string;
+  patientId: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  reason: string;
+  status: string;
+}
+
+const Appointments = () => {
+  const navigate = useNavigate();
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    patientId: '',
+    appointmentDate: new Date().toISOString().split('T')[0],
+    appointmentTime: '09:00',
+    reason: '',
+    status: 'scheduled'
+  });
+
+  const fetchAppointments = async () => {
+    try {
+      const data = await api.appointments.getAll();
+      setAppointments(data);
+      setLoading(false);
+    } catch (error) {
+      toast.error('Failed to fetch appointments');
+      setLoading(false);
+    }
+  };
+
+  const fetchPatients = async () => {
+    try {
+      const data = await api.patients.getAll();
+      setPatients(data);
+    } catch (error) {
+      toast.error('Failed to fetch patients');
+    }
+  };
+
+  useEffect(() => {
+    fetchAppointments();
+    fetchPatients();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const newAppointment = {
+      id: `appointment_${Date.now()}`,
+      ...formData,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      await api.appointments.create(newAppointment);
+      toast.success('Appointment scheduled successfully');
+      setFormData({
+        patientId: '',
+        appointmentDate: new Date().toISOString().split('T')[0],
+        appointmentTime: '09:00',
+        reason: '',
+        status: 'scheduled'
+      });
+      fetchAppointments();
+    } catch (error) {
+      toast.error('Failed to schedule appointment');
+    }
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Appointments</h1>
-          <p className="text-muted-foreground">Schedule and manage appointments</p>
-        </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          New Appointment
-        </Button>
+    <div className="container mx-auto p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Appointment Management</h1>
       </div>
-
-      <div className="grid gap-6 md:grid-cols-[300px_1fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Select Date</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            <Calendar
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              className="rounded-md"
-            />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              Appointments for {date?.toLocaleDateString()}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {appointments.map((apt) => (
-                <div
-                  key={apt.id}
-                  className="flex items-center justify-between border-l-4 border-primary pl-4 py-3 bg-secondary/50 rounded"
-                >
-                  <div>
-                    <p className="font-medium">{apt.patient}</p>
-                    <p className="text-sm text-muted-foreground">{apt.type}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-medium">{apt.time}</p>
-                    <Button variant="ghost" size="sm" className="mt-1">
-                      Details
-                    </Button>
-                  </div>
-                </div>
-              ))}
+      
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>Schedule New Appointment</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="patientId">Patient</Label>
+              <select
+                id="patientId"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={formData.patientId}
+                onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
+                required
+              >
+                <option value="">Select a patient</option>
+                {patients.map((patient) => (
+                  <option key={patient.id} value={patient.id}>
+                    {patient.firstName} {patient.lastName}
+                  </option>
+                ))}
+              </select>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+            <div>
+              <Label htmlFor="status">Status</Label>
+              <select
+                id="status"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                value={formData.status}
+                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              >
+                <option value="scheduled">Scheduled</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="appointmentDate">Date</Label>
+              <Input
+                id="appointmentDate"
+                type="date"
+                value={formData.appointmentDate}
+                onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="appointmentTime">Time</Label>
+              <Input
+                id="appointmentTime"
+                type="time"
+                value={formData.appointmentTime}
+                onChange={(e) => setFormData({ ...formData, appointmentTime: e.target.value })}
+                required
+              />
+            </div>
+            <div className="col-span-2">
+              <Label htmlFor="reason">Reason</Label>
+              <Textarea
+                id="reason"
+                value={formData.reason}
+                onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
+                required
+              />
+            </div>
+            <div className="col-span-2">
+              <Button type="submit" className="w-full">Schedule Appointment</Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Appointment List ({appointments.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {appointments.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No appointments yet. Schedule your first appointment above.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Patient</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Reason</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {appointments.map((appointment) => {
+                  const patient = patients.find(p => p.id === appointment.patientId);
+                  return (
+                    <TableRow key={appointment.id}>
+                      <TableCell>
+                        {patient ? `${patient.firstName} ${patient.lastName}` : appointment.patientId}
+                      </TableCell>
+                      <TableCell>{appointment.appointmentDate}</TableCell>
+                      <TableCell>{appointment.appointmentTime}</TableCell>
+                      <TableCell>{appointment.reason}</TableCell>
+                      <TableCell>
+                        <span className={`px-2 py-1 rounded-full text-xs ${
+                          appointment.status === 'completed' ? 'bg-green-100 text-green-800' :
+                          appointment.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                          'bg-blue-100 text-blue-800'
+                        }`}>
+                          {appointment.status}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
-}
+};
+
+export default Appointments;

@@ -1,106 +1,286 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Plus } from "lucide-react";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { api } from '@/lib/api';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { toast } from 'sonner';
 
-export default function Treatments() {
-  const treatments = [
-    { id: 1, patient: "John Doe", type: "Hair Transplant", startDate: "2024-01-15", status: "Ongoing" },
-    { id: 2, patient: "Jane Smith", type: "PRP Therapy", startDate: "2024-01-10", status: "Completed" },
-    { id: 3, patient: "Bob Johnson", type: "Medication", startDate: "2024-01-20", status: "Ongoing" },
-  ];
+interface Treatment {
+  id: string;
+  patientId: string;
+  treatmentType: string;
+  description: string;
+  date: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+const treatmentTypes = [
+  'PRP (Platelet-Rich Plasma)',
+  'Hair Transplant - FUE',
+  'Hair Transplant - FUT',
+  'Mesotherapy',
+  'Low-Level Laser Therapy',
+  'Scalp Micropigmentation',
+  'Topical Treatments',
+  'Consultation',
+  'Follow-up',
+  'Other'
+];
+
+interface Patient {
+  id: string;
+  firstName: string;
+  lastName: string;
+}
+
+const Treatments = () => {
+  const navigate = useNavigate();
+  const [treatments, setTreatments] = useState<Treatment[]>([]);
+  const [patients, setPatients] = useState<Patient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [formData, setFormData] = useState({
+    patientId: '',
+    treatmentType: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0]
+  });
+  const [editingTreatment, setEditingTreatment] = useState<Treatment | null>(null);
+
+  const fetchTreatments = async () => {
+    try {
+      const data = await api.treatments.getAll();
+      setTreatments(data);
+      setLoading(false);
+    } catch (error) {
+      toast.error('Failed to fetch treatments');
+      setLoading(false);
+    }
+  };
+
+  const fetchPatients = async () => {
+    try {
+      const data = await api.patients.getAll();
+      setPatients(data);
+    } catch (error) {
+      toast.error('Failed to fetch patients');
+    }
+  };
+
+  useEffect(() => {
+    fetchTreatments();
+    fetchPatients();
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const treatmentData = {
+      id: editingTreatment?.id || `treatment_${Date.now()}`,
+      ...formData,
+      createdAt: editingTreatment?.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    try {
+      await api.treatments.create(treatmentData);
+      toast.success(editingTreatment ? 'Treatment updated successfully' : 'Treatment added successfully');
+      setFormData({
+        patientId: '',
+        treatmentType: '',
+        description: '',
+        date: new Date().toISOString().split('T')[0]
+      });
+      setEditingTreatment(null);
+      fetchTreatments();
+    } catch (error) {
+      toast.error('Failed to save treatment');
+    }
+  };
+
+  const handleEdit = (treatment: Treatment) => {
+    setFormData({
+      patientId: treatment.patientId,
+      treatmentType: treatment.treatmentType,
+      description: treatment.description,
+      date: treatment.date
+    });
+    setEditingTreatment(treatment);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this treatment?')) return;
+    
+    try {
+      await api.treatments.delete(id);
+      toast.success('Treatment deleted');
+      fetchTreatments();
+    } catch (error) {
+      toast.error('Failed to delete treatment');
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setFormData({
+      patientId: '',
+      treatmentType: '',
+      description: '',
+      date: new Date().toISOString().split('T')[0]
+    });
+    setEditingTreatment(null);
+  };
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Treatments</h1>
-          <p className="text-muted-foreground">Manage patient treatments</p>
-        </div>
-        <Button className="gap-2">
-          <Plus className="h-4 w-4" />
-          New Treatment
-        </Button>
+    <div className="container mx-auto p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Treatment Management</h1>
       </div>
+      
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle>{editingTreatment ? 'Edit Treatment' : 'Add New Treatment'}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="patientId">Patient</Label>
+              <select
+                id="patientId"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={formData.patientId}
+                onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
+                required
+              >
+                <option value="">Select a patient</option>
+                {patients.map((patient) => (
+                  <option key={patient.id} value={patient.id}>
+                    {patient.firstName} {patient.lastName}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="treatmentType">Treatment Type</Label>
+              <select
+                id="treatmentType"
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                value={formData.treatmentType}
+                onChange={(e) => setFormData({ ...formData, treatmentType: e.target.value })}
+                required
+              >
+                <option value="">Select treatment type</option>
+                {treatmentTypes.map((type) => (
+                  <option key={type} value={type}>
+                    {type}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Hair Transplant</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">45</p>
-            <p className="text-sm text-muted-foreground">Active cases</p>
-          </CardContent>
-        </Card>
+            <div>
+              <Label htmlFor="date">Date</Label>
+              <Input
+                id="date"
+                type="date"
+                value={formData.date}
+                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                required
+              />
+            </div>
+            </div>
+            
+            <div>
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                rows={4}
+                placeholder="Treatment details, observations, recommendations..."
+              />
+            </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">PRP Therapy</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">28</p>
-            <p className="text-sm text-muted-foreground">Active cases</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Medication</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">16</p>
-            <p className="text-sm text-muted-foreground">Active cases</p>
-          </CardContent>
-        </Card>
-      </div>
+            <div className="flex gap-2">
+              <Button type="submit" className="flex-1">
+                {editingTreatment ? 'Update Treatment' : 'Add Treatment'}
+              </Button>
+              {editingTreatment && (
+                <Button type="button" variant="outline" onClick={handleCancelEdit}>
+                  Cancel
+                </Button>
+              )}
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
-          <CardTitle>Active Treatments</CardTitle>
+          <CardTitle>Treatment List ({treatments.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Patient</TableHead>
-                <TableHead>Treatment Type</TableHead>
-                <TableHead>Start Date</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {treatments.map((treatment) => (
-                <TableRow key={treatment.id}>
-                  <TableCell className="font-medium">{treatment.patient}</TableCell>
-                  <TableCell>{treatment.type}</TableCell>
-                  <TableCell>{treatment.startDate}</TableCell>
-                  <TableCell>
-                    <span className={`px-2 py-1 rounded text-xs ${
-                      treatment.status === "Ongoing" 
-                        ? "bg-primary/10 text-primary" 
-                        : "bg-green-500/10 text-green-600"
-                    }`}>
-                      {treatment.status}
-                    </span>
-                  </TableCell>
-                  <TableCell>
-                    <Button variant="ghost" size="sm">View</Button>
-                  </TableCell>
+          {treatments.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No treatments yet. Add your first treatment above.</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Patient</TableHead>
+                  <TableHead>Treatment Type</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {treatments.map((treatment) => {
+                  const patient = patients.find(p => p.id === treatment.patientId);
+                  return (
+                    <TableRow key={treatment.id}>
+                      <TableCell className="font-medium">
+                        {patient ? `${patient.firstName} ${patient.lastName}` : treatment.patientId}
+                      </TableCell>
+                      <TableCell>{treatment.treatmentType}</TableCell>
+                      <TableCell className="max-w-xs truncate">{treatment.description}</TableCell>
+                      <TableCell>{treatment.date}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEdit(treatment)}
+                          >
+                            Edit
+                          </Button>
+                          <Button 
+                            variant="destructive" 
+                            size="sm"
+                            onClick={() => handleDelete(treatment.id)}
+                          >
+                            Delete
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>
   );
-}
+};
+
+export default Treatments;

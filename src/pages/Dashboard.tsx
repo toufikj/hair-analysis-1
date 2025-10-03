@@ -1,25 +1,90 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Calendar, TrendingUp, Activity } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Users, Calendar, Image, FileText } from 'lucide-react';
 
-export default function Dashboard() {
-  const stats = [
-    { title: "Total Patients", value: "1,234", icon: Users, change: "+12%" },
-    { title: "Appointments Today", value: "23", icon: Calendar, change: "+5%" },
-    { title: "Active Treatments", value: "89", icon: Activity, change: "+8%" },
-    { title: "Success Rate", value: "94%", icon: TrendingUp, change: "+2%" },
+interface Stats {
+  patients: number;
+  appointments: number;
+  treatments: number;
+  images: number;
+}
+
+const Dashboard = () => {
+  const [stats, setStats] = useState<Stats>({
+    patients: 0,
+    appointments: 0,
+    treatments: 0,
+    images: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [patients, appointments, treatments, images] = await Promise.all([
+          api.patients.getAll(),
+          api.appointments.getAll(),
+          api.treatments.getAll(),
+          api.images.getAll()
+        ]);
+
+        setStats({
+          patients: patients.length,
+          appointments: appointments.length,
+          treatments: treatments.length,
+          images: images.length
+        });
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching stats:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  if (loading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
+
+  const statCards = [
+    {
+      title: 'Total Patients',
+      value: stats.patients,
+      icon: Users,
+      description: 'Registered patients'
+    },
+    {
+      title: 'Appointments',
+      value: stats.appointments,
+      icon: Calendar,
+      description: 'Scheduled appointments'
+    },
+    {
+      title: 'Treatments',
+      value: stats.treatments,
+      icon: FileText,
+      description: 'Treatment records'
+    },
+    {
+      title: 'Dermascopy Images',
+      value: stats.images,
+      icon: Image,
+      description: 'Captured images'
+    }
   ];
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome to your hair clinic management system
-        </p>
+    <div className="container mx-auto p-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold">Dashboard</h1>
+        <p className="text-muted-foreground">Overview of your hair clinic</p>
       </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statCards.map((stat) => (
           <Card key={stat.title}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -30,59 +95,27 @@ export default function Dashboard() {
             <CardContent>
               <div className="text-2xl font-bold">{stat.value}</div>
               <p className="text-xs text-muted-foreground">
-                <span className="text-primary">{stat.change}</span> from last month
+                {stat.description}
               </p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="mt-8">
         <Card>
           <CardHeader>
-            <CardTitle>Recent Appointments</CardTitle>
+            <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between border-b pb-3">
-                  <div>
-                    <p className="font-medium">Patient {i}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Consultation - {new Date().toLocaleDateString()}
-                    </p>
-                  </div>
-                  <span className="text-sm bg-primary/10 text-primary px-2 py-1 rounded">
-                    Scheduled
-                  </span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Treatment Overview</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Hair Transplant</span>
-                <span className="font-medium">45</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">PRP Therapy</span>
-                <span className="font-medium">28</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Medication</span>
-                <span className="font-medium">16</span>
-              </div>
-            </div>
+            <p className="text-muted-foreground text-center py-8">
+              Activity timeline coming soon...
+            </p>
           </CardContent>
         </Card>
       </div>
     </div>
   );
-}
+};
+
+export default Dashboard;

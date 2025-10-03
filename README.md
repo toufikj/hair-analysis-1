@@ -1,46 +1,73 @@
-# Hair Clinic CRM
+# Welcome to your Lovable project
 
-A comprehensive management system for hair clinics with patient tracking, appointments, dermascopy analysis, and treatment management.
+## Project info
 
-## ✨ Features
+**URL**: https://lovable.dev/projects/9b7a8fd8-f14d-4380-bd93-d59c8d2bfdb3
 
-- 📊 **Dashboard**: Real-time overview of clinic operations
-- 👥 **Patient Management**: Complete patient records and history
-- 📅 **Appointments**: Schedule and manage consultations
-- 🔬 **Dermascopy**: Hair and scalp analysis with image storage
-- 💊 **Treatments**: Track treatment plans and progress
-- ⚙️ **Settings**: Clinic configuration and preferences
+## How can I edit this code?
 
-## 🛠️ Tech Stack
+There are several ways of editing your application.
 
-**Frontend:** React 18, TypeScript, Vite, TailwindCSS, shadcn/ui  
-**Backend:** Node.js, Express, PostgreSQL  
-**Deployment:** Docker & Docker Compose
+**Use Lovable**
 
-## 🚀 Quick Start
+Simply visit the [Lovable Project](https://lovable.dev/projects/9b7a8fd8-f14d-4380-bd93-d59c8d2bfdb3) and start prompting.
 
-See **QUICK_START.md** and **DEPLOYMENT_GUIDE.md** for complete setup instructions with Docker + PostgreSQL.
+Changes made via Lovable will be committed automatically to this repo.
 
-```bash
-# Clone and setup
-git clone https://github.com/toufikj/hair-analysis-1.git
-cd hair-analysis-1
+**Use your preferred IDE**
 
-# Create environment file
-cp .env.example .env
+If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
 
-# Start with Docker
-docker-compose up --build
+The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
 
-# Access: http://localhost:5173
+Follow these steps:
+
+```sh
+# Step 1: Clone the repository using the project's Git URL.
+git clone <YOUR_GIT_URL>
+
+# Step 2: Navigate to the project directory.
+cd <YOUR_PROJECT_NAME>
+
+# Step 3: Install the necessary dependencies.
+npm i
+
+# Step 4: Start the development server with auto-reloading and an instant preview.
+npm run dev
 ```
 
-## 📖 Documentation
+**Edit a file directly in GitHub**
 
-- **DEPLOYMENT_GUIDE.md** - Complete Docker setup with all code files
-- **QUICK_START.md** - 5-minute setup guide
+- Navigate to the desired file(s).
+- Click the "Edit" button (pencil icon) at the top right of the file view.
+- Make your changes and commit the changes.
 
-## 🔗 Original Lovable Project
+**Use GitHub Codespaces**
 
-**URL**: https://lovable.dev/projects/223bba50-c596-46d1-98df-d5b9821419f6
+- Navigate to the main page of your repository.
+- Click on the "Code" button (green button) near the top right.
+- Select the "Codespaces" tab.
+- Click on "New codespace" to launch a new Codespace environment.
+- Edit files directly within the Codespace and commit and push your changes once you're done.
 
+## What technologies are used for this project?
+
+This project is built with:
+
+- Vite
+- TypeScript
+- React
+- shadcn-ui
+- Tailwind CSS
+
+## How can I deploy this project?
+
+Simply open [Lovable](https://lovable.dev/projects/9b7a8fd8-f14d-4380-bd93-d59c8d2bfdb3) and click on Share -> Publish.
+
+## Can I connect a custom domain to my Lovable project?
+
+Yes, you can!
+
+To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+
+Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
