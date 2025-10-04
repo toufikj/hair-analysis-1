@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableRow, TableHeader } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { Plus } from 'lucide-react';
 
 interface Treatment {
   id: string;
@@ -39,10 +40,10 @@ interface Patient {
 }
 
 const Treatments = () => {
-  const navigate = useNavigate();
   const [treatments, setTreatments] = useState<Treatment[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     patientId: '',
     treatmentType: '',
@@ -96,6 +97,7 @@ const Treatments = () => {
         date: new Date().toISOString().split('T')[0]
       });
       setEditingTreatment(null);
+      setDialogOpen(false);
       fetchTreatments();
     } catch (error) {
       toast.error('Failed to save treatment');
@@ -110,7 +112,7 @@ const Treatments = () => {
       date: treatment.date
     });
     setEditingTreatment(treatment);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setDialogOpen(true);
   };
 
   const handleDelete = async (id: string) => {
@@ -141,92 +143,97 @@ const Treatments = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6">
+      <div className="mb-6 flex justify-between items-center">
         <h1 className="text-3xl font-bold">Treatment Management</h1>
-      </div>
-      
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>{editingTreatment ? 'Edit Treatment' : 'Add New Treatment'}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="patientId">Patient</Label>
-              <select
-                id="patientId"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                value={formData.patientId}
-                onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
-                required
-              >
-                <option value="">Select a patient</option>
-                {patients.map((patient) => (
-                  <option key={patient.id} value={patient.id}>
-                    {patient.firstName} {patient.lastName}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <Label htmlFor="treatmentType">Treatment Type</Label>
-              <select
-                id="treatmentType"
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                value={formData.treatmentType}
-                onChange={(e) => setFormData({ ...formData, treatmentType: e.target.value })}
-                required
-              >
-                <option value="">Select treatment type</option>
-                {treatmentTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
-                  </option>
-                ))}
-              </select>
-            </div>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => {
+              setEditingTreatment(null);
+              setFormData({
+                patientId: '',
+                treatmentType: '',
+                description: '',
+                date: new Date().toISOString().split('T')[0]
+              });
+            }}>
+              <Plus className="mr-2 h-4 w-4" /> Add Treatment
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{editingTreatment ? 'Edit Treatment' : 'Add New Treatment'}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="patientId">Patient</Label>
+                  <select
+                    id="patientId"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    value={formData.patientId}
+                    onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
+                    required
+                  >
+                    <option value="">Select a patient</option>
+                    {patients.map((patient) => (
+                      <option key={patient.id} value={patient.id}>
+                        {patient.firstName} {patient.lastName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="treatmentType">Treatment Type</Label>
+                  <select
+                    id="treatmentType"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    value={formData.treatmentType}
+                    onChange={(e) => setFormData({ ...formData, treatmentType: e.target.value })}
+                    required
+                  >
+                    <option value="">Select treatment type</option>
+                    {treatmentTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-            <div>
-              <Label htmlFor="date">Date</Label>
-              <Input
-                id="date"
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                required
-              />
-            </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea
-                id="description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                rows={4}
-                placeholder="Treatment details, observations, recommendations..."
-              />
-            </div>
+                <div>
+                  <Label htmlFor="date">Date</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    required
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  rows={4}
+                  placeholder="Treatment details, observations, recommendations..."
+                />
+              </div>
 
-            <div className="flex gap-2">
-              <Button type="submit" className="flex-1">
+              <Button type="submit" className="w-full">
                 {editingTreatment ? 'Update Treatment' : 'Add Treatment'}
               </Button>
-              {editingTreatment && (
-                <Button type="button" variant="outline" onClick={handleCancelEdit}>
-                  Cancel
-                </Button>
-              )}
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Treatment List ({treatments.length})</CardTitle>
+          <CardTitle>Treatments ({treatments.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {treatments.length === 0 ? (

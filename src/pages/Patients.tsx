@@ -1,13 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { api } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableRow, TableHeader } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { Plus } from 'lucide-react';
 
 interface Patient {
   id: string;
@@ -25,9 +26,9 @@ interface Patient {
 }
 
 const Patients = () => {
-  const navigate = useNavigate();
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -83,6 +84,7 @@ const Patients = () => {
         notes: ''
       });
       setEditingPatient(null);
+      setDialogOpen(false);
       fetchPatients();
     } catch (error) {
       toast.error('Failed to save patient');
@@ -102,7 +104,7 @@ const Patients = () => {
       notes: patient.notes || ''
     });
     setEditingPatient(patient);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    setDialogOpen(true);
   };
 
   const handleCancelEdit = () => {
@@ -136,113 +138,123 @@ const Patients = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6">
+      <div className="mb-6 flex justify-between items-center">
         <h1 className="text-3xl font-bold">Patient Management</h1>
-      </div>
-      
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>{editingPatient ? 'Edit Patient' : 'Add New Patient'}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="firstName">First Name</Label>
-              <Input
-                id="firstName"
-                value={formData.firstName}
-                onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="lastName">Last Name</Label>
-              <Input
-                id="lastName"
-                value={formData.lastName}
-                onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                required
-              />
-            </div>
-            <div>
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="phone">Phone</Label>
-              <Input
-                id="phone"
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="dateOfBirth">Date of Birth</Label>
-              <Input
-                id="dateOfBirth"
-                type="date"
-                value={formData.dateOfBirth}
-                onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
-              />
-            </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="medicalHistory">Medical History</Label>
-              <Textarea
-                id="medicalHistory"
-                value={formData.medicalHistory}
-                onChange={(e) => setFormData({ ...formData, medicalHistory: e.target.value })}
-                placeholder="Previous conditions, surgeries, medications..."
-                rows={3}
-              />
-            </div>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => {
+              setEditingPatient(null);
+              setFormData({
+                firstName: '',
+                lastName: '',
+                email: '',
+                phone: '',
+                dateOfBirth: '',
+                gender: 'other',
+                medicalHistory: '',
+                allergies: '',
+                notes: ''
+              });
+            }}>
+              <Plus className="mr-2 h-4 w-4" /> Add Patient
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>{editingPatient ? 'Edit Patient' : 'Add New Patient'}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="firstName">First Name</Label>
+                  <Input
+                    id="firstName"
+                    value={formData.firstName}
+                    onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    value={formData.lastName}
+                    onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    required
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    value={formData.dateOfBirth}
+                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                  />
+                </div>
+              </div>
+              
+              <div>
+                <Label htmlFor="medicalHistory">Medical History</Label>
+                <Textarea
+                  id="medicalHistory"
+                  value={formData.medicalHistory}
+                  onChange={(e) => setFormData({ ...formData, medicalHistory: e.target.value })}
+                  placeholder="Previous conditions, surgeries, medications..."
+                  rows={3}
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="allergies">Allergies</Label>
-              <Textarea
-                id="allergies"
-                value={formData.allergies}
-                onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
-                placeholder="Known allergies..."
-                rows={2}
-              />
-            </div>
+              <div>
+                <Label htmlFor="allergies">Allergies</Label>
+                <Textarea
+                  id="allergies"
+                  value={formData.allergies}
+                  onChange={(e) => setFormData({ ...formData, allergies: e.target.value })}
+                  placeholder="Known allergies..."
+                  rows={2}
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="notes">Notes</Label>
-              <Textarea
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Additional notes..."
-                rows={2}
-              />
-            </div>
+              <div>
+                <Label htmlFor="notes">Notes</Label>
+                <Textarea
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Additional notes..."
+                  rows={2}
+                />
+              </div>
 
-            <div className="flex gap-2">
-              <Button type="submit" className="flex-1">
+              <Button type="submit" className="w-full">
                 {editingPatient ? 'Update Patient' : 'Add Patient'}
               </Button>
-              {editingPatient && (
-                <Button type="button" variant="outline" onClick={handleCancelEdit}>
-                  Cancel
-                </Button>
-              )}
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Patient List ({patients.length})</CardTitle>
+          <CardTitle>Patients ({patients.length})</CardTitle>
         </CardHeader>
         <CardContent>
           {patients.length === 0 ? (

@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { X, Plus, Trash2 } from 'lucide-react';
 
@@ -42,6 +43,7 @@ const DermascopyImagesNew = () => {
   const [records, setRecords] = useState<DermascopyRecord[]>([]);
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     patientId: '',
@@ -154,6 +156,7 @@ const DermascopyImagesNew = () => {
         date: new Date().toISOString().split('T')[0]
       });
       setImageEntries([{ scalpArea: '', images: [] }]);
+      setDialogOpen(false);
       fetchRecords();
     } catch (error) {
       toast.error('Failed to save images');
@@ -178,141 +181,152 @@ const DermascopyImagesNew = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6">
+      <div className="mb-6 flex justify-between items-center">
         <h1 className="text-3xl font-bold">Dermascopy Images</h1>
-      </div>
-      
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle>Add New Dermascopy Images</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="patientId">Patient</Label>
-                <select
-                  id="patientId"
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                  value={formData.patientId}
-                  onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
-                  required
-                >
-                  <option value="">Select a patient</option>
-                  {patients.map((patient) => (
-                    <option key={patient.id} value={patient.id}>
-                      {patient.firstName} {patient.lastName}
-                    </option>
-                  ))}
-                </select>
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogTrigger asChild>
+            <Button onClick={() => {
+              setFormData({
+                patientId: '',
+                notes: '',
+                date: new Date().toISOString().split('T')[0]
+              });
+              setImageEntries([{ scalpArea: '', images: [] }]);
+            }}>
+              <Plus className="mr-2 h-4 w-4" /> Add Images
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Add New Dermascopy Images</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="patientId">Patient</Label>
+                  <select
+                    id="patientId"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    value={formData.patientId}
+                    onChange={(e) => setFormData({ ...formData, patientId: e.target.value })}
+                    required
+                  >
+                    <option value="">Select a patient</option>
+                    {patients.map((patient) => (
+                      <option key={patient.id} value={patient.id}>
+                        {patient.firstName} {patient.lastName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <Label htmlFor="date">Date</Label>
+                  <Input
+                    id="date"
+                    type="date"
+                    value={formData.date}
+                    onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+                    required
+                  />
+                </div>
               </div>
 
               <div>
-                <Label htmlFor="date">Date</Label>
+                <Label htmlFor="notes">Notes</Label>
                 <Input
-                  id="date"
-                  type="date"
-                  value={formData.date}
-                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-                  required
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  placeholder="Overall observations and notes"
                 />
               </div>
-            </div>
 
-            <div>
-              <Label htmlFor="notes">Notes</Label>
-              <Input
-                id="notes"
-                value={formData.notes}
-                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                placeholder="Overall observations and notes"
-              />
-            </div>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-base">Scalp Areas & Images</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={addImageEntry}>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Scalp Area
+                  </Button>
+                </div>
 
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label className="text-base">Scalp Areas & Images</Label>
-                <Button type="button" variant="outline" size="sm" onClick={addImageEntry}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Scalp Area
-                </Button>
-              </div>
+                {imageEntries.map((entry, entryIndex) => (
+                  <Card key={entryIndex} className="p-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <div className="flex-1">
+                          <Label htmlFor={`scalpArea-${entryIndex}`}>Scalp Area</Label>
+                          <select
+                            id={`scalpArea-${entryIndex}`}
+                            className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            value={entry.scalpArea}
+                            onChange={(e) => updateScalpArea(entryIndex, e.target.value)}
+                          >
+                            <option value="">Select scalp area</option>
+                            {scalpAreas.map((area) => (
+                              <option key={area} value={area}>
+                                {area}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-              {imageEntries.map((entry, entryIndex) => (
-                <Card key={entryIndex} className="p-4">
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <div className="flex-1">
-                        <Label htmlFor={`scalpArea-${entryIndex}`}>Scalp Area</Label>
-                        <select
-                          id={`scalpArea-${entryIndex}`}
-                          className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                          value={entry.scalpArea}
-                          onChange={(e) => updateScalpArea(entryIndex, e.target.value)}
-                        >
-                          <option value="">Select scalp area</option>
-                          {scalpAreas.map((area) => (
-                            <option key={area} value={area}>
-                              {area}
-                            </option>
+                        <div className="flex-1">
+                          <Label htmlFor={`images-${entryIndex}`}>Upload Images</Label>
+                          <Input
+                            id={`images-${entryIndex}`}
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(e) => handleImageUpload(entryIndex, e)}
+                            className="cursor-pointer"
+                          />
+                        </div>
+
+                        {imageEntries.length > 1 && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => removeImageEntry(entryIndex)}
+                            className="mt-6"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+
+                      {entry.images.length > 0 && (
+                        <div className="grid grid-cols-4 gap-2">
+                          {entry.images.map((img, imgIndex) => (
+                            <div key={imgIndex} className="relative group">
+                              <img 
+                                src={img} 
+                                alt={`Preview ${imgIndex + 1}`}
+                                className="w-full h-24 object-cover rounded border"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeImage(entryIndex, imgIndex)}
+                                className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </div>
                           ))}
-                        </select>
-                      </div>
-
-                      <div className="flex-1">
-                        <Label htmlFor={`images-${entryIndex}`}>Upload Images</Label>
-                        <Input
-                          id={`images-${entryIndex}`}
-                          type="file"
-                          accept="image/*"
-                          multiple
-                          onChange={(e) => handleImageUpload(entryIndex, e)}
-                          className="cursor-pointer"
-                        />
-                      </div>
-
-                      {imageEntries.length > 1 && (
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeImageEntry(entryIndex)}
-                          className="mt-6"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        </div>
                       )}
                     </div>
+                  </Card>
+                ))}
+              </div>
 
-                    {entry.images.length > 0 && (
-                      <div className="grid grid-cols-4 gap-2">
-                        {entry.images.map((img, imgIndex) => (
-                          <div key={imgIndex} className="relative group">
-                            <img 
-                              src={img} 
-                              alt={`Preview ${imgIndex + 1}`}
-                              className="w-full h-24 object-cover rounded border"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => removeImage(entryIndex, imgIndex)}
-                              className="absolute top-1 right-1 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <X className="h-3 w-3" />
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </Card>
-              ))}
-            </div>
-
-            <Button type="submit" className="w-full">Save All Records</Button>
-          </form>
-        </CardContent>
-      </Card>
+              <Button type="submit" className="w-full">Save All Records</Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       <Card>
         <CardHeader>
