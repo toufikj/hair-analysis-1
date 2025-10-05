@@ -29,6 +29,7 @@ const Patients = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -132,14 +133,23 @@ const Patients = () => {
     }
   };
 
+  const filteredPatients = patients.filter(patient => {
+    const search = searchTerm.toLowerCase();
+    return patient.firstName.toLowerCase().includes(search) ||
+           patient.lastName.toLowerCase().includes(search) ||
+           patient.email?.toLowerCase().includes(search) ||
+           patient.phone?.includes(search);
+  });
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Patient Management</h1>
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold">Patient Management</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => {
@@ -250,15 +260,21 @@ const Patients = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
+        <Input
+          placeholder="Search by name, email, or phone..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Patients ({patients.length})</CardTitle>
+          <CardTitle>Patients ({filteredPatients.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          {patients.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No patients yet. Add your first patient above.</p>
+          {filteredPatients.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No patients found.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -266,13 +282,12 @@ const Patients = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
-                  <TableHead>DOB</TableHead>
-                  <TableHead>Allergies</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Gender</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {patients.map((patient) => (
+                {filteredPatients.map((patient) => (
                   <TableRow key={patient.id}>
                     <TableCell className="font-medium">{patient.firstName} {patient.lastName}</TableCell>
                     <TableCell>{patient.email}</TableCell>

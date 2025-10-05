@@ -54,6 +54,9 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(appointment)
     }).then(r => r.json()),
+    delete: (id: string) => fetch(`${API_BASE_URL}/appointments/${id}`, {
+      method: 'DELETE'
+    }).then(r => r.json()),
   },
   
   // Export/Import

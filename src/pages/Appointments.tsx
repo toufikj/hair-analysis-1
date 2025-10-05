@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableRow, TableHeader } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Plus } from 'lucide-react';
+import { Plus, Edit, Trash2 } from 'lucide-react';
 
 interface Patient {
   id: string;
@@ -32,11 +32,14 @@ const Appointments = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     patientId: '',
-    appointmentDate: new Date().toISOString().split('T')[0],
-    appointmentTime: '09:00',
-    reason: '',
+    date: new Date().toISOString().split('T')[0],
+    time: '09:00',
+    type: 'consultation',
+    notes: '',
     status: 'scheduled'
   });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchAppointments = async () => {
     try {
@@ -66,29 +69,64 @@ const Appointments = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    const newAppointment = {
-      id: `appointment_${Date.now()}`,
+    const appointmentData = {
+      id: editingId || `appointment_${Date.now()}`,
       ...formData,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: new Date().toISOString()
     };
 
     try {
-      await api.appointments.create(newAppointment);
-      toast.success('Appointment scheduled successfully');
+      await api.appointments.create(appointmentData);
+      toast.success(editingId ? 'Appointment updated successfully' : 'Appointment scheduled successfully');
       setFormData({
         patientId: '',
-        appointmentDate: new Date().toISOString().split('T')[0],
-        appointmentTime: '09:00',
-        reason: '',
+        date: new Date().toISOString().split('T')[0],
+        time: '09:00',
+        type: 'consultation',
+        notes: '',
         status: 'scheduled'
       });
+      setEditingId(null);
       setDialogOpen(false);
       fetchAppointments();
     } catch (error) {
-      toast.error('Failed to schedule appointment');
+      toast.error('Failed to save appointment');
     }
   };
+
+  const handleEdit = (appointment: Appointment) => {
+    setFormData({
+      patientId: appointment.patientId,
+      date: appointment.appointmentDate,
+      time: appointment.appointmentTime,
+      type: appointment.reason || 'consultation',
+      notes: appointment.reason || '',
+      status: appointment.status
+    });
+    setEditingId(appointment.id);
+    setDialogOpen(true);
+  };
+
+  const handleDelete = async (id: string) => {
+    if (confirm('Are you sure you want to delete this appointment?')) {
+      try {
+        await api.appointments.delete(id);
+        toast.success('Appointment deleted successfully');
+        fetchAppointments();
+      } catch (error) {
+        toast.error('Failed to delete appointment');
+      }
+    }
+  };
+
+  const filteredAppointments = appointments.filter(appointment => {
+    const patient = patients.find(p => p.id === appointment.patientId);
+    const patientName = patient ? `${patient.firstName} ${patient.lastName}`.toLowerCase() : '';
+    const search = searchTerm.toLowerCase();
+    return patientName.includes(search) || 
+           appointment.appointmentDate.includes(search) ||
+           appointment.status.toLowerCase().includes(search);
+  });
 
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -96,25 +134,28 @@ const Appointments = () => {
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Appointment Management</h1>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => {
-              setFormData({
-                patientId: '',
-                appointmentDate: new Date().toISOString().split('T')[0],
-                appointmentTime: '09:00',
-                reason: '',
-                status: 'scheduled'
-              });
-            }}>
-              <Plus className="mr-2 h-4 w-4" /> Add Appointment
-            </Button>
-          </DialogTrigger>
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold">Appointment Management</h1>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => {
+                setFormData({
+                  patientId: '',
+                  date: new Date().toISOString().split('T')[0],
+                  time: '09:00',
+                  type: 'consultation',
+                  notes: '',
+                  status: 'scheduled'
+                });
+                setEditingId(null);
+              }}>
+                <Plus className="mr-2 h-4 w-4" /> Add Appointment
+              </Button>
+            </DialogTrigger>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Schedule New Appointment</DialogTitle>
+              <DialogTitle>{editingId ? 'Edit Appointment' : 'Schedule New Appointment'}</DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
               <div>
@@ -148,49 +189,72 @@ const Appointments = () => {
                 </select>
               </div>
               <div>
-                <Label htmlFor="appointmentDate">Date</Label>
+                <Label htmlFor="date">Date</Label>
                 <Input
-                  id="appointmentDate"
+                  id="date"
                   type="date"
-                  value={formData.appointmentDate}
-                  onChange={(e) => setFormData({ ...formData, appointmentDate: e.target.value })}
+                  value={formData.date}
+                  onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="appointmentTime">Time</Label>
+                <Label htmlFor="time">Time</Label>
                 <Input
-                  id="appointmentTime"
+                  id="time"
                   type="time"
-                  value={formData.appointmentTime}
-                  onChange={(e) => setFormData({ ...formData, appointmentTime: e.target.value })}
+                  value={formData.time}
+                  onChange={(e) => setFormData({ ...formData, time: e.target.value })}
                   required
                 />
               </div>
               <div className="col-span-2">
-                <Label htmlFor="reason">Reason</Label>
+                <Label htmlFor="type">Appointment Type</Label>
+                <select
+                  id="type"
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background"
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  required
+                >
+                  <option value="consultation">Consultation</option>
+                  <option value="follow-up">Follow-up</option>
+                  <option value="treatment">Treatment</option>
+                  <option value="review">Review</option>
+                </select>
+              </div>
+              <div className="col-span-2">
+                <Label htmlFor="notes">Notes</Label>
                 <Textarea
-                  id="reason"
-                  value={formData.reason}
-                  onChange={(e) => setFormData({ ...formData, reason: e.target.value })}
-                  required
+                  id="notes"
+                  value={formData.notes}
+                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                 />
               </div>
               <div className="col-span-2">
-                <Button type="submit" className="w-full">Schedule Appointment</Button>
+                <Button type="submit" className="w-full">
+                  {editingId ? 'Update Appointment' : 'Schedule Appointment'}
+                </Button>
               </div>
             </form>
           </DialogContent>
         </Dialog>
       </div>
+      <Input
+        placeholder="Search by patient name, date, or status..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        className="mb-4"
+      />
+      </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Appointments ({appointments.length})</CardTitle>
+          <CardTitle>Appointments ({filteredAppointments.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          {appointments.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No appointments yet. Schedule your first appointment above.</p>
+          {filteredAppointments.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No appointments found.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -198,12 +262,13 @@ const Appointments = () => {
                   <TableHead>Patient</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Time</TableHead>
-                  <TableHead>Reason</TableHead>
+                  <TableHead>Type</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {appointments.map((appointment) => {
+                {filteredAppointments.map((appointment) => {
                   const patient = patients.find(p => p.id === appointment.patientId);
                   return (
                     <TableRow key={appointment.id}>
@@ -212,7 +277,7 @@ const Appointments = () => {
                       </TableCell>
                       <TableCell>{appointment.appointmentDate}</TableCell>
                       <TableCell>{appointment.appointmentTime}</TableCell>
-                      <TableCell>{appointment.reason}</TableCell>
+                      <TableCell className="capitalize">{appointment.reason}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs ${
                           appointment.status === 'completed' ? 'bg-green-100 text-green-800' :
@@ -221,6 +286,16 @@ const Appointments = () => {
                         }`}>
                           {appointment.status}
                         </span>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleEdit(appointment)}>
+                            Edit
+                          </Button>
+                          <Button variant="destructive" size="sm" onClick={() => handleDelete(appointment.id)}>
+                            Delete
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );

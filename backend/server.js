@@ -390,9 +390,9 @@ app.get('/api/appointments', async (req, res) => {
     res.json(result.rows.map(row => ({
       id: row.id,
       patientId: row.patient_id,
-      date: row.date,
-      time: row.time,
-      type: row.type,
+      appointmentDate: row.date,
+      appointmentTime: row.time,
+      reason: row.type,
       status: row.status,
       notes: row.notes,
       createdAt: row.created_at
@@ -421,6 +421,18 @@ app.post('/api/appointments', async (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('✗ Error saving appointment:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.delete('/api/appointments/:id', async (req, res) => {
+  try {
+    console.log('Deleting appointment:', req.params.id);
+    await pool.query('DELETE FROM appointments WHERE id = $1', [req.params.id]);
+    console.log('✓ Appointment deleted successfully');
+    res.json({ success: true });
+  } catch (error) {
+    console.error('✗ Error deleting appointment:', error);
     res.status(500).json({ error: error.message });
   }
 });

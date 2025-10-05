@@ -44,6 +44,7 @@ const Treatments = () => {
   const [patients, setPatients] = useState<Patient[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
   const [formData, setFormData] = useState({
     patientId: '',
     treatmentType: '',
@@ -137,14 +138,24 @@ const Treatments = () => {
     setEditingTreatment(null);
   };
 
+  const filteredTreatments = treatments.filter(treatment => {
+    const patient = patients.find(p => p.id === treatment.patientId);
+    const patientName = patient ? `${patient.firstName} ${patient.lastName}`.toLowerCase() : '';
+    const search = searchTerm.toLowerCase();
+    return patientName.includes(search) ||
+           treatment.treatmentType?.toLowerCase().includes(search) ||
+           treatment.date.includes(search);
+  });
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
   return (
     <div className="container mx-auto p-6">
-      <div className="mb-6 flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Treatment Management</h1>
+      <div className="mb-6">
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-3xl font-bold">Treatment Management</h1>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button onClick={() => {
@@ -229,28 +240,34 @@ const Treatments = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
+        <Input
+          placeholder="Search by patient name, treatment type, or date..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Treatments ({treatments.length})</CardTitle>
+          <CardTitle>Treatments ({filteredTreatments.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          {treatments.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">No treatments yet. Add your first treatment above.</p>
+          {filteredTreatments.length === 0 ? (
+            <p className="text-muted-foreground text-center py-8">No treatments found.</p>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Patient</TableHead>
-                  <TableHead>Treatment Type</TableHead>
-                  <TableHead>Description</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Treatment Type</TableHead>
+                  <TableHead>Next Appointment</TableHead>
+                  <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {treatments.map((treatment) => {
+                {filteredTreatments.map((treatment) => {
                   const patient = patients.find(p => p.id === treatment.patientId);
                   return (
                     <TableRow key={treatment.id}>
