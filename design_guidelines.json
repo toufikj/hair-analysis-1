@@ -1,0 +1,67 @@
+{
+  "typography": {
+    "heading_font": "Plus Jakarta Sans, sans-serif",
+    "body_font": "Inter, sans-serif",
+    "mono_font": "JetBrains Mono, monospace",
+    "hierarchy": {
+      "h1": "text-4xl sm:text-5xl lg:text-6xl tracking-tight font-extrabold",
+      "h2": "text-2xl sm:text-3xl lg:text-4xl tracking-tight font-bold",
+      "h3": "text-xl sm:text-2xl font-semibold",
+      "h4": "text-lg sm:text-xl font-medium",
+      "body": "text-base leading-relaxed text-slate-600 dark:text-slate-300",
+      "small": "text-sm text-slate-500"
+    }
+  },
+  "colors": {
+    "archetype": "ORGANIC & EARTHY",
+    "primary": "#0F766E",
+    "primary_foreground": "#FFFFFF",
+    "secondary": "#14B8A6",
+    "accent": "#F59E0B",
+    "background_light": "#F8FAFC",
+    "background_dark": "#0B0F19",
+    "surface_light": "#FFFFFF",
+    "surface_dark": "#1E293B",
+    "border_light": "#E2E8F0",
+    "border_dark": "#334155",
+    "text_primary_light": "#0F172A",
+    "text_primary_dark": "#F8FAFC",
+    "forbidden_colors": ["#7351B7", "#1B93A4"]
+  },
+  "visual_enhancers": {
+    "card_style": "flat rectangular with 1px subtle border, rounded-xl",
+    "shadows": "shadow-sm hover:shadow-md transition-all duration-200",
+    "glassmorphism": "backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-slate-200/50 dark:border-slate-800/50",
+    "textures": "subtle dot pattern grid background with warm clinical tones"
+  },
+  "component_strategy": {
+    "framework": "React.js with Tailwind CSS & Shadcn primitives",
+    "ui_components": ["dialog", "dropdown-menu", "tabs", "badge", "button", "input", "select", "card", "sonner", "scroll-area"],
+    "icons": "lucide-react"
+  },
+  "image_urls": {
+    "clinic_hero": "https://images.pexels.com/photos/7446660/pexels-photo-7446660.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "dermatoscope_exam": "https://images.pexels.com/photos/29648642/pexels-photo-29648642.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    "scalp_treatment": "https://images.unsplash.com/photo-1785860420936-b4f8bb4de5e1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODd8MHwxfHNlYXJjaHwzfHxzY2FscCUyMGhlYWx0aCUyMGRlcm1hdG9sb2d5JTIwcGF0aWVudCUyMGNsaW5pYyUyMG1lZGljYWx8ZW58MHx8fHwxNzg3MzI2NzEwfDA&ixlib=rb-4.1.0&q=85"
+  },
+  "app_specifications": {
+    "name": "Trichoclinic Dermascope & Patient Record System",
+    "context": "Medical / Dermatology Clinic Internal Prototype",
+    "key_functionalities": [
+      "Patient list with search and condition filter",
+      "Create new patient record with phone and initial notes",
+      "Patient detail view with visit history timeline",
+      "Dermascope photo upload and management",
+      "Controlled condition tagging (Alopecia, Dandruff/Seborrheic Dermatitis, Psoriasis, Folliculitis, Healthy Scalp, Needs Review)",
+      "Visit notes editor with timestamping and condition summary",
+      "Photo gallery view with lightbox zoom and filter by condition",
+      "Clinical analytics / condition distribution summary"
+    ]
+  },
+  "universal_guidelines": {
+    "data_testid_required": true,
+    "no_transparent_headers": true,
+    "interactive_hover_states": true,
+    "mobile_first_responsive": true
+  }
+}

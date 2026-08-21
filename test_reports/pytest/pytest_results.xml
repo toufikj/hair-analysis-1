@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="7" skipped="0" tests="17" time="1.198" timestamp="2026-08-21T15:43:07.372293+00:00" hostname="agent-env-037ff2f5-cb1b-4b4c-bcfd-37f670790f70"><testcase classname="tests.backend_test.TestPatients" name="test_create_patient" time="0.249" /><testcase classname="tests.backend_test.TestPhotos" name="test_upload_photo_default_needs_review" time="0.001"><failure message="IndexError: list index out of range">tests/backend_test.py:92: in test_upload_photo_default_needs_review
+    pid = created_patient_ids[0]
+          ^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="tests.backend_test.TestPhotos" name="test_upload_multiple_conditions" time="0.000"><failure message="IndexError: list index out of range">tests/backend_test.py:111: in test_upload_multiple_conditions
+    pid = created_patient_ids[0]
+          ^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="tests.backend_test.TestPhotos" name="test_upload_ignores_unknown_condition" time="0.000"><failure message="IndexError: list index out of range">tests/backend_test.py:121: in test_upload_ignores_unknown_condition
+    pid = created_patient_ids[0]
+          ^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="tests.backend_test.TestPhotos" name="test_upload_rejects_non_image" time="0.000"><failure message="IndexError: list index out of range">tests/backend_test.py:129: in test_upload_rejects_non_image
+    pid = created_patient_ids[0]
+          ^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="tests.backend_test.TestPhotos" name="test_upload_missing_patient" time="0.131" /><testcase classname="tests.backend_test.TestPhotos" name="test_list_photos" time="0.000"><failure message="IndexError: list index out of range">tests/backend_test.py:140: in test_list_photos
+    pid = created_patient_ids[0]
+          ^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="tests.backend_test.TestPhotos" name="test_delete_photo" time="0.000"><failure message="IndexError: list index out of range">tests/backend_test.py:148: in test_delete_photo
+    pid = created_patient_ids[0]
+          ^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="tests.backend_test.TestPhotos" name="test_delete_missing_photo" time="0.088" /><testcase classname="tests.backend_test.TestPatients" name="test_create_patient_missing_fields" time="0.104" /><testcase classname="tests.backend_test.TestMeta" name="test_health" time="0.103" /><testcase classname="tests.backend_test.TestPatients" name="test_list_patients" time="0.123" /><testcase classname="tests.backend_test.TestMeta" name="test_conditions" time="0.124" /><testcase classname="tests.backend_test.TestPatients" name="test_search_patient" time="0.079" /><testcase classname="tests.backend_test.TestPatientUpdate" name="test_patch_patient" time="0.000"><failure message="IndexError: list index out of range">tests/backend_test.py:166: in test_patch_patient
+    pid = created_patient_ids[0]
+          ^^^^^^^^^^^^^^^^^^^^^^
+E   IndexError: list index out of range</failure></testcase><testcase classname="tests.backend_test.TestPatients" name="test_get_patient" time="0.078" /><testcase classname="tests.backend_test.TestPatients" name="test_get_missing_patient" time="0.073" /></testsuite></testsuites>
